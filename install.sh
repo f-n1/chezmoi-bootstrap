@@ -10,7 +10,7 @@ set -eu
 # ---------------------------------------------------------------------------
 # Integrity — auto-updated by `just checksum`, do not edit manually
 # ---------------------------------------------------------------------------
-SELF_CHECKSUM="6077229d8cec91fdd7e296fca95a3f84422d8b71aa8e5c50f852a0856a21f7df"
+SELF_CHECKSUM="b6c62eb39a709ad9c8e1742bc61d777253fe9d161cd8a508054ac27bdbad05aa"
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -29,6 +29,14 @@ warn()  { printf '\033[1;33mWARN:\033[0m %s\n' "$*" >&2; }
 die()   { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 
 has() { command -v "$1" >/dev/null 2>&1; }
+
+age_decrypt() {
+    if [ -n "${AGE_PASSPHRASE:-}" ]; then
+        printf '%s' "$AGE_PASSPHRASE" | age -d "$@"
+    else
+        age -d "$@"
+    fi
+}
 
 verify_integrity() {
     script="$1"
@@ -182,7 +190,7 @@ import_gpg_keys() {
     fi
 
     info "Importing GPG keys from age-encrypted bundle..."
-    run age -d "$tmp_bundle" | gpg --import
+    run age_decrypt "$tmp_bundle" | gpg --import
 
     fingerprint=$(gpg --list-secret-keys --with-colons 2>/dev/null \
         | grep "^fpr" | head -1 | cut -d: -f10)
@@ -214,7 +222,7 @@ import_ssh_keys() {
     chmod 700 "$HOME/.ssh"
 
     info "Importing SSH keys from age-encrypted bundle..."
-    run age -d "$tmp_bundle" | tar xf - -C "$HOME/.ssh"
+    run age_decrypt "$tmp_bundle" | tar xf - -C "$HOME/.ssh"
 
     # Fix permissions on any private keys extracted
     for f in "$HOME/.ssh"/*; do
