@@ -1,0 +1,83 @@
+# Test matrix for install.sh across supported Linux distros.
+#
+# Interactive (drop into shell):
+#   docker compose run --rm ubuntu
+#
+# Automated dry-run for one distro:
+#   docker compose run --rm ubuntu sh install.sh --dry-run
+#
+# Automated dry-run for ALL distros:
+#   docker compose --profile test up
+
+x-common: &common
+  stdin_open: true
+  tty: true
+  working_dir: /bootstrap
+  volumes:
+    - ..:/bootstrap:ro
+  environment:
+    GITHUB_USER: ${GITHUB_USER:-}
+    AGE_PASSPHRASE: ${AGE_PASSPHRASE:-}
+
+services:
+  ubuntu:
+    <<: *common
+    image: ubuntu:24.04
+
+  debian:
+    <<: *common
+    image: debian:bookworm
+
+  fedora:
+    <<: *common
+    image: fedora:41
+
+  rocky:
+    <<: *common
+    image: rockylinux:9
+
+  archlinux:
+    <<: *common
+    image: archlinux:latest
+
+  alpine:
+    <<: *common
+    image: alpine:3.21
+
+  # --- profile: test  (automated dry-run) ---
+
+  test-ubuntu:
+    <<: *common
+    image: ubuntu:24.04
+    profiles: [test]
+    command: sh install.sh --dry-run
+
+  test-debian:
+    <<: *common
+    image: debian:bookworm
+    profiles: [test]
+    command: sh install.sh --dry-run
+
+  test-fedora:
+    <<: *common
+    image: fedora:41
+    profiles: [test]
+    command: sh install.sh --dry-run
+
+  test-rocky:
+    <<: *common
+    image: rockylinux:9
+    profiles: [test]
+    command: sh install.sh --dry-run
+
+  test-archlinux:
+    <<: *common
+    image: archlinux:latest
+    profiles: [test]
+    command: sh install.sh --dry-run
+
+  test-alpine:
+    <<: *common
+    image: alpine:3.21
+    profiles: [test]
+    command: sh install.sh --dry-run

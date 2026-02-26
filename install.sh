@@ -10,7 +10,7 @@ set -eu
 # ---------------------------------------------------------------------------
 # Integrity — auto-updated by `just checksum`, do not edit manually
 # ---------------------------------------------------------------------------
-SELF_CHECKSUM="b6c62eb39a709ad9c8e1742bc61d777253fe9d161cd8a508054ac27bdbad05aa"
+SELF_CHECKSUM="a3fc06366dee12a30cf54287e0c814908b495c29fac97aa7d728415d5edef177"
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -19,6 +19,15 @@ SELF_CHECKSUM="b6c62eb39a709ad9c8e1742bc61d777253fe9d161cd8a508054ac27bdbad05aa"
 CHEZMOI_BIN_DIR="${CHEZMOI_BIN_DIR:-$HOME/.local/bin}"
 GITHUB_USER="${GITHUB_USER:-}"
 DRY_RUN=0
+MACOS_PKGS="git gnupg age openssh gopass"
+LINUX_PKGS="git gnupg2 age openssh-clients curl gopass"
+LINUX_PKGS_ALPINE="git gnupg age openssh-client curl gopass"
+LINUX_PKGS_ARCH="git gnupg age openssh curl gopass"
+LINUX_PKGS_CENTOS="git gnupg2 openssh-clients curl gopass"
+LINUX_PKGS_FEDORA="git gnupg2 openssh-clients curl gopass"
+LINUX_PKGS_MANJARO="git gnupg age openssh curl gopass"
+LINUX_PKGS_RASPBIAN="git gnupg age openssh-client curl gopass"
+LINUX_PKGS_UBUNTU="git gnupg age openssh-client curl gopass"    
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -45,7 +54,7 @@ verify_integrity() {
         return 0
     fi
     actual=$(sed 's/^SELF_CHECKSUM=.*/SELF_CHECKSUM="%%CHECKSUM%%"/' "$script" \
-        | shasum -a 256 | cut -d' ' -f1)
+        | sha256sum | cut -d' ' -f1)
     if [ "$actual" != "$SELF_CHECKSUM" ]; then
         die "Integrity check failed (expected $SELF_CHECKSUM, got $actual)"
     fi
@@ -94,7 +103,7 @@ install_macos() {
         run /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     fi
 
-    local pkgs="git gnupg age openssh"
+    local pkgs="git gnupg age openssh gopass"
     info "Installing packages via Homebrew: $pkgs"
     for pkg in $pkgs; do
         if brew list --formula "$pkg" >/dev/null 2>&1; then
@@ -113,24 +122,24 @@ install_linux() {
         ubuntu|debian|pop|linuxmint|raspbian)
             info "Installing packages via apt..."
             run $sudo_cmd apt-get update -qq
-            run $sudo_cmd apt-get install -y -qq git gnupg age openssh-client curl
+            run $sudo_cmd apt-get install -y -qq $LINUX_PKGS_UBUNTU
             ;;
         fedora)
             info "Installing packages via dnf..."
-            run $sudo_cmd dnf install -y git gnupg2 age openssh-clients curl
+            run $sudo_cmd dnf install -y $LINUX_PKGS_FEDORA
             ;;
         centos|rhel|rocky|alma)
             info "Installing packages via dnf..."
-            run $sudo_cmd dnf install -y git gnupg2 openssh-clients curl
+            run $sudo_cmd dnf install -y $LINUX_PKGS_CENTOS
             warn "age may not be in default repos — install manually if missing"
             ;;
         arch|manjaro|endeavouros)
             info "Installing packages via pacman..."
-            run $sudo_cmd pacman -Sy --noconfirm --needed git gnupg age openssh curl
+            run $sudo_cmd pacman -Sy --noconfirm --needed $LINUX_PKGS_ARCH
             ;;
         alpine)
             info "Installing packages via apk..."
-            run $sudo_cmd apk add --no-cache git gnupg age openssh-client curl
+            run $sudo_cmd apk add --no-cache $LINUX_PKGS_ALPINE
             ;;
         *)
             die "Unsupported Linux distribution: $DISTRO"
@@ -279,7 +288,7 @@ parse_args() {
             --dry-run) DRY_RUN=1 ;;
             --checksum)
                 sed 's/^SELF_CHECKSUM=.*/SELF_CHECKSUM="%%CHECKSUM%%"/' "$0" \
-                    | shasum -a 256 | cut -d' ' -f1
+                    | sha256sum | cut -d' ' -f1
                 exit 0
                 ;;
             --help|-h)
