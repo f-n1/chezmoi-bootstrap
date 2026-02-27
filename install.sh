@@ -15,15 +15,15 @@ CHEZMOI_BIN_DIR="${CHEZMOI_BIN_DIR:-$HOME/.local/bin}"
 CHEZMOI_REPO="${CHEZMOI_REPO:-}"
 GITHUB_USER="${GITHUB_USER:-}"
 DRY_RUN=0
-MACOS_PKGS="git gnupg age openssh gopass"
-LINUX_PKGS="git gnupg2 age openssh-clients curl gopass"
-LINUX_PKGS_ALPINE="git gnupg age openssh-client curl gopass"
-LINUX_PKGS_ARCH="git gnupg age openssh curl gopass"
-LINUX_PKGS_CENTOS="git gnupg2 openssh-clients curl gopass"
-LINUX_PKGS_FEDORA="git gnupg2 openssh-clients curl gopass"
-LINUX_PKGS_MANJARO="git gnupg age openssh curl gopass"
-LINUX_PKGS_RASPBIAN="git gnupg age openssh-client curl gopass"
-LINUX_PKGS_UBUNTU="git gnupg age openssh-client curl gopass"    
+MACOS_PKGS="git gnupg age openssh gopass chezmoi"
+LINUX_PKGS="git gnupg2 age openssh-clients curl gopass chezmoi"
+LINUX_PKGS_ALPINE="git gnupg age openssh-client curl gopass chezmoi"
+LINUX_PKGS_ARCH="git gnupg age openssh curl gopass chezmoi"
+LINUX_PKGS_CENTOS="git gnupg2 openssh-clients curl gopass chezmoi"
+LINUX_PKGS_FEDORA="git gnupg2 openssh-clients curl gopass chezmoi"
+LINUX_PKGS_MANJARO="git gnupg age openssh curl gopass chezmoi"
+LINUX_PKGS_RASPBIAN="git gnupg age openssh-client curl gopass chezmoi"
+LINUX_PKGS_UBUNTU="git gnupg age openssh-client curl gopass chezmoi"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -34,14 +34,6 @@ warn()  { printf '\033[1;33mWARN:\033[0m %s\n' "$*" >&2; }
 die()   { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 
 has() { command -v "$1" >/dev/null 2>&1; }
-
-age_decrypt() {
-    if [ -n "${AGE_PASSPHRASE:-}" ]; then
-        printf '%s' "$AGE_PASSPHRASE" | age -d "$@"
-    else
-        age -d "$@"
-    fi
-}
 
 run() {
     if [ "$DRY_RUN" -eq 1 ]; then
@@ -85,7 +77,7 @@ install_macos() {
         run /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     fi
 
-    local pkgs="git gnupg age openssh gopass"
+    local pkgs="git gnupg age openssh gopass chezmoi"
     info "Installing packages via Homebrew: $pkgs"
     for pkg in $pkgs; do
         if brew list --formula "$pkg" >/dev/null 2>&1; then
@@ -137,97 +129,24 @@ install_packages() {
 }
 
 # ---------------------------------------------------------------------------
-# Key import
+# SSH key setup
 # ---------------------------------------------------------------------------
 
-REPO_BASE=""
+BOOTSTRAP_KEY="$HOME/.ssh/id_bootstrap"
 
-repo_url() {
-    if [ -z "$GITHUB_USER" ]; then
-        return 1
-    fi
-    REPO_BASE="https://raw.githubusercontent.com/${GITHUB_USER}/chezmoi-bootstrap/main"
-    return 0
-}
-
-fetch_bundle() {
-    url="$1"
-    dest="$2"
-    if curl -fsSL --head "$url" >/dev/null 2>&1; then
-        curl -fsSL "$url" -o "$dest"
-        return 0
-    fi
-    return 1
-}
-
-import_gpg_keys() {
-    if ! repo_url; then
-        warn "No GITHUB_USER set — skipping GPG key import."
-        return 0
-    fi
-    bundle_url="${REPO_BASE}/gpg-keys/secret-keys.age"
-    tmp_bundle="$(mktemp)"
-
-    if ! fetch_bundle "$bundle_url" "$tmp_bundle"; then
-        warn "No GPG key bundle found at gpg-keys/secret-keys.age — skipping."
-        rm -f "$tmp_bundle"
-        return 0
-    fi
-
-    if gpg --list-secret-keys 2>/dev/null | grep -q "sec"; then
-        info "GPG secret key already present — skipping import."
-        rm -f "$tmp_bundle"
-        return 0
-    fi
-
-    info "Importing GPG keys from age-encrypted bundle..."
-    run age_decrypt "$tmp_bundle" | gpg --import
-
-    fingerprint=$(gpg --list-secret-keys --with-colons 2>/dev/null \
-        | grep "^fpr" | head -1 | cut -d: -f10)
-    if [ -n "$fingerprint" ]; then
-        echo "${fingerprint}:6:" | gpg --import-ownertrust
-        info "GPG key imported and trusted: $fingerprint"
-    else
-        warn "Could not determine fingerprint — set trust manually: gpg --edit-key <ID> trust"
-    fi
-
-    rm -f "$tmp_bundle"
-}
-
-import_ssh_keys() {
-    if ! repo_url; then
-        warn "No GITHUB_USER set — skipping SSH key import."
-        return 0
-    fi
-    bundle_url="${REPO_BASE}/ssh-keys/keys.tar.age"
-    tmp_bundle="$(mktemp)"
-
-    if ! fetch_bundle "$bundle_url" "$tmp_bundle"; then
-        warn "No SSH key bundle found at ssh-keys/keys.tar.age — skipping."
-        rm -f "$tmp_bundle"
-        return 0
-    fi
-
+import_ssh_key() {
     mkdir -p "$HOME/.ssh"
     chmod 700 "$HOME/.ssh"
 
-    info "Importing SSH keys from age-encrypted bundle..."
-    run age_decrypt "$tmp_bundle" | tar xf - -C "$HOME/.ssh"
+    if [ -f "$BOOTSTRAP_KEY" ]; then
+        info "Bootstrap SSH key already exists at $BOOTSTRAP_KEY — skipping."
+        return 0
+    fi
 
-    # Fix permissions on any private keys extracted
-    for f in "$HOME/.ssh"/*; do
-        [ -f "$f" ] || continue
-        case "$f" in
-            *.pub|*/known_hosts|*/authorized_keys|*/config)
-                chmod 644 "$f" ;;
-            *)
-                chmod 600 "$f" ;;
-        esac
-    done
-
-    info "SSH keys imported to ~/.ssh/"
-    rm -f "$tmp_bundle"
+    info "Paste your SSH private key below, then press Enter and Ctrl-D:"
+    cat > "$BOOTSTRAP_KEY"
+    chmod 600 "$BOOTSTRAP_KEY"
+    info "Saved bootstrap key to $BOOTSTRAP_KEY"
 }
 
 # ---------------------------------------------------------------------------
@@ -240,6 +159,7 @@ install_chezmoi() {
         return 0
     fi
 
+    warn "chezmoi not available via system packages — falling back to curl installer"
     info "Installing chezmoi to $CHEZMOI_BIN_DIR..."
     mkdir -p "$CHEZMOI_BIN_DIR"
     run sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$CHEZMOI_BIN_DIR"
@@ -258,7 +178,12 @@ init_chezmoi() {
     fi
 
     info "Initializing chezmoi for $repo..."
-    run chezmoi init --ssh --apply "$repo"
+    if [ -f "$BOOTSTRAP_KEY" ]; then
+        GIT_SSH_COMMAND="ssh -i $BOOTSTRAP_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+            run chezmoi init --ssh --apply "$repo"
+    else
+        run chezmoi init --ssh --apply "$repo"
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -304,8 +229,7 @@ main() {
     [ "$DRY_RUN" -eq 1 ] && info "Dry-run mode — no changes will be made"
 
     install_packages
-    import_gpg_keys
-    import_ssh_keys
+    import_ssh_key
     install_chezmoi
     init_chezmoi
 
