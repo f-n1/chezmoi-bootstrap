@@ -139,8 +139,13 @@ import_ssh_key() {
     chmod 700 "$HOME/.ssh"
 
     if [ -f "$BOOTSTRAP_KEY" ]; then
-        info "Bootstrap SSH key already exists at $BOOTSTRAP_KEY — skipping."
-        return 0
+        info "Bootstrap SSH key already exists at $BOOTSTRAP_KEY"
+        printf '    Replace it? [y/N] '
+        read -r answer < /dev/tty
+        case "$answer" in
+            y|Y|yes|YES) ;;
+            *) info "Keeping existing key."; return 0 ;;
+        esac
     fi
 
     info "Paste your SSH private key below, then press Enter and Ctrl-D:"
