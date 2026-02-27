@@ -14,70 +14,88 @@ x-common: &common
   tty: true
   working_dir: /bootstrap
   volumes:
-    - ..:/bootstrap:ro
-  environment:
-    GITHUB_USER: ${GITHUB_USER:-}
-    AGE_PASSPHRASE: ${AGE_PASSPHRASE:-}
+    - bootstrap_data:/bootstrap
+
+x-apt-init: &apt-init
+  entrypoint: ["/bin/sh", "-c", "apt-get update -qq && apt-get install -y -qq curl >/dev/null 2>&1; exec \"$$@\"", "--"]
+
+x-dnf-init: &dnf-init
+  entrypoint: ["/bin/sh", "-c", "dnf install -y -q curl >/dev/null 2>&1; exec \"$$@\"", "--"]
+
+x-pacman-init: &pacman-init
+  entrypoint: ["/bin/sh", "-c", "pacman -Sy --noconfirm curl >/dev/null 2>&1; exec \"$$@\"", "--"]
+
+x-apk-init: &apk-init
+  entrypoint: ["/bin/sh", "-c", "apk add --no-cache curl >/dev/null 2>&1; exec \"$$@\"", "--"]
 
 services:
   ubuntu:
-    <<: *common
+    <<: [*common, *apt-init]
     image: ubuntu:24.04
+    command: sh
 
   debian:
-    <<: *common
+    <<: [*common, *apt-init]
     image: debian:bookworm
+    command: sh
 
   fedora:
-    <<: *common
+    <<: [*common, *dnf-init]
     image: fedora:41
+    command: sh
 
   rocky:
-    <<: *common
+    <<: [*common, *dnf-init]
     image: rockylinux:9
+    command: sh
 
   archlinux:
-    <<: *common
+    <<: [*common, *pacman-init]
     image: archlinux:latest
+    command: sh
 
   alpine:
-    <<: *common
+    <<: [*common, *apk-init]
     image: alpine:3.21
+    command: sh
 
   # --- profile: test  (automated dry-run) ---
 
   test-ubuntu:
-    <<: *common
+    <<: [*common, *apt-init]
     image: ubuntu:24.04
     profiles: [test]
     command: sh install.sh --dry-run
 
   test-debian:
-    <<: *common
+    <<: [*common, *apt-init]
     image: debian:bookworm
     profiles: [test]
     command: sh install.sh --dry-run
 
   test-fedora:
-    <<: *common
+    <<: [*common, *dnf-init]
     image: fedora:41
     profiles: [test]
     command: sh install.sh --dry-run
 
   test-rocky:
-    <<: *common
+    <<: [*common, *dnf-init]
     image: rockylinux:9
     profiles: [test]
     command: sh install.sh --dry-run
 
   test-archlinux:
-    <<: *common
+    <<: [*common, *pacman-init]
     image: archlinux:latest
     profiles: [test]
     command: sh install.sh --dry-run
 
   test-alpine:
-    <<: *common
+    <<: [*common, *apk-init]
     image: alpine:3.21
     profiles: [test]
     command: sh install.sh --dry-run
+
+volumes:
+  bootstrap_data: 

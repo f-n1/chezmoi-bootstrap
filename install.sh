@@ -3,27 +3,25 @@
 # Supports macOS (Homebrew) and Linux (apt, dnf, pacman, apk).
 #
 # Usage:
-#   sh install.sh [--dry-run] [GITHUB_USERNAME]
-#   GITHUB_USER=you sh install.sh
+#   sh install.sh [--dry-run] [--repo REPO] [GITHUB_USERNAME]
 set -eu
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 
-CHEZMOI_BIN_DIR="${CHEZMOI_BIN_DIR:-$HOME/.local/bin}"
-CHEZMOI_REPO="${CHEZMOI_REPO:-}"
-GITHUB_USER="${GITHUB_USER:-}"
+CHEZMOI_REPO=""
+GITHUB_USER=""
 DRY_RUN=0
-MACOS_PKGS="git gnupg age openssh gopass chezmoi"
-LINUX_PKGS="git gnupg2 age openssh-clients curl gopass chezmoi"
-LINUX_PKGS_ALPINE="git gnupg age openssh-client curl gopass chezmoi"
-LINUX_PKGS_ARCH="git gnupg age openssh curl gopass chezmoi"
-LINUX_PKGS_CENTOS="git gnupg2 openssh-clients curl gopass chezmoi"
-LINUX_PKGS_FEDORA="git gnupg2 openssh-clients curl gopass chezmoi"
-LINUX_PKGS_MANJARO="git gnupg age openssh curl gopass chezmoi"
-LINUX_PKGS_RASPBIAN="git gnupg age openssh-client curl gopass chezmoi"
-LINUX_PKGS_UBUNTU="git gnupg age openssh-client curl gopass chezmoi"
+MACOS_PKGS="git gnupg age openssh gopass chezmoi vim"
+LINUX_PKGS="git gnupg2 age openssh-clients curl gopass chezmoi vim"
+LINUX_PKGS_ALPINE="git gnupg age openssh-client curl gopass chezmoi vim"
+LINUX_PKGS_ARCH="git gnupg age openssh curl gopass chezmoi vim"
+LINUX_PKGS_CENTOS="git gnupg2 openssh-clients curl gopass chezmoi vim"
+LINUX_PKGS_FEDORA="git gnupg2 openssh-clients curl gopass chezmoi vim"
+LINUX_PKGS_MANJARO="git gnupg age openssh curl gopass chezmoi vim"
+LINUX_PKGS_RASPBIAN="git gnupg age openssh-client curl gopass chezmoi vim"
+LINUX_PKGS_UBUNTU="git gnupg age openssh-client curl gopass chezmoi vim"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -77,7 +75,7 @@ install_macos() {
         run /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     fi
 
-    local pkgs="git gnupg age openssh gopass chezmoi"
+    local pkgs="git gnupg age openssh gopass chezmoi vim"
     info "Installing packages via Homebrew: $pkgs"
     for pkg in $pkgs; do
         if brew list --formula "$pkg" >/dev/null 2>&1; then
@@ -132,7 +130,7 @@ install_packages() {
 # SSH key setup
 # ---------------------------------------------------------------------------
 
-BOOTSTRAP_KEY="$HOME/.ssh/id_chezmoi_bootstrap_key"
+BOOTSTRAP_KEY="$HOME/.ssh/id_chezmoi_bootstrap"
 
 validate_ssh_key() {
     keyfile="$1"
@@ -188,24 +186,17 @@ import_ssh_key() {
 # chezmoi
 # ---------------------------------------------------------------------------
 
-install_chezmoi() {
+check_chezmoi() {
     if has chezmoi; then
-        info "chezmoi already installed: $(chezmoi --version)"
+        info "chezmoi found: $(chezmoi --version)"
         return 0
     fi
 
-    warn "chezmoi not available via system packages — falling back to curl installer"
-    info "Installing chezmoi to $CHEZMOI_BIN_DIR..."
-    mkdir -p "$CHEZMOI_BIN_DIR"
-    run sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$CHEZMOI_BIN_DIR"
-
-    if ! echo "$PATH" | tr ':' '\n' | grep -qx "$CHEZMOI_BIN_DIR"; then
-        export PATH="$CHEZMOI_BIN_DIR:$PATH"
-    fi
+    die "chezmoi is not installed. Install it from https://www.chezmoi.io/install/"
 }
 
 init_chezmoi() {
-    repo="${CHEZMOI_REPO:-$GITHUB_USER}"
+    repo="${CHEZMOI_REPO:-${GITHUB_USER}}"
     if [ -z "$repo" ]; then
         warn "No CHEZMOI_REPO or GITHUB_USER set — skipping chezmoi init."
         warn "Run manually: chezmoi init --apply <repo>"
@@ -237,7 +228,6 @@ parse_args() {
             --repo=*) CHEZMOI_REPO="${1#--repo=}" ;;
             --help|-h)
                 printf 'Usage: %s [--dry-run] [--repo REPO] [GITHUB_USERNAME]\n' "$0"
-                printf 'Environment: GITHUB_USER, CHEZMOI_REPO, CHEZMOI_BIN_DIR\n'
                 exit 0
                 ;;
             -*)
@@ -265,7 +255,7 @@ main() {
 
     install_packages
     import_ssh_key
-    install_chezmoi
+    check_chezmoi
     init_chezmoi
 
     info "Bootstrap complete."
