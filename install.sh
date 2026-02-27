@@ -139,19 +139,31 @@ import_ssh_key() {
     chmod 700 "$HOME/.ssh"
 
     if [ -f "$BOOTSTRAP_KEY" ]; then
-        info "Bootstrap SSH key already exists at $BOOTSTRAP_KEY"
-        printf '    Replace it? [y/N] '
-        read -r answer < /dev/tty
-        case "$answer" in
-            y|Y|yes|YES) ;;
-            *) info "Keeping existing key."; return 0 ;;
-        esac
+        if ssh-keygen -l -f "$BOOTSTRAP_KEY" >/dev/null 2>&1; then
+            info "Valid bootstrap SSH key exists at $BOOTSTRAP_KEY ($(ssh-keygen -l -f "$BOOTSTRAP_KEY" 2>/dev/null | cut -d' ' -f1-2))"
+            printf '    Replace it? [y/N] '
+            read -r answer < /dev/tty
+            case "$answer" in
+                y|Y|yes|YES) ;;
+                *) info "Keeping existing key."; return 0 ;;
+            esac
+        else
+            warn "Existing $BOOTSTRAP_KEY is not a valid SSH key — replacing."
+        fi
     fi
 
-    info "Paste your SSH private key below, then press Enter and Ctrl-D:"
-    cat < /dev/tty > "$BOOTSTRAP_KEY"
-    chmod 600 "$BOOTSTRAP_KEY"
-    info "Saved bootstrap key to $BOOTSTRAP_KEY"
+    info "Paste your SSH private key below, then press Enter and Ctrl-D (Ctrl-C to abort):"
+    tmp_key="$(mktemp)"
+    cat < /dev/tty > "$tmp_key"
+
+    chmod 600 "$tmp_key"
+    if ! ssh-keygen -l -f "$tmp_key" >/dev/null 2>&1; then
+        rm -f "$tmp_key"
+        die "Input is not a valid SSH private key"
+    fi
+
+    mv "$tmp_key" "$BOOTSTRAP_KEY"
+    info "Saved bootstrap key to $BOOTSTRAP_KEY ($(ssh-keygen -l -f "$BOOTSTRAP_KEY" 2>/dev/null | cut -d' ' -f1-2))"
 }
 
 # ---------------------------------------------------------------------------
