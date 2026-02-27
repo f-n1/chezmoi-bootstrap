@@ -5,14 +5,6 @@ GITHUB_USER := env("GITHUB_USER", "YOUR_DEFAULT_USERNAME")
 default:
     @just --list
 
-# Embed SHA-256 checksum into install.sh (compute with placeholder, then write)
-checksum:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    hash=$(sh install.sh --checksum)
-    sed -i '' "s/^SELF_CHECKSUM=.*/SELF_CHECKSUM=\"${hash}\"/" install.sh
-    echo "Embedded checksum: $hash"
-
 # Lint install.sh with shellcheck
 lint:
     shellcheck install.sh
@@ -21,12 +13,9 @@ lint:
 test-local:
     sh install.sh --dry-run
 
-# Print the secure one-liner for copy-paste (downloads to tmpfile for checksum verification)
+# Print the one-liner for copy-paste
 one-liner:
-    @echo 'd=$(mktemp -d) && \'
-    @echo '  curl -fsSL https://raw.githubusercontent.com/{{GITHUB_USER}}/chezmoi-bootstrap/main/install.sh -o "$d/install.sh" && \'
-    @echo '  sh "$d/install.sh" {{GITHUB_USER}} && \'
-    @echo '  rm -rf "$d"'
+    @echo 'curl -fsSL https://raw.githubusercontent.com/f-n1/chezmoi-bootstrap/main/install.sh | sh -s -- {{GITHUB_USER}}'
 
 # Export GPG secret keys into gpg-keys/secret-keys.age (age-encrypted)
 export-gpg:
@@ -117,8 +106,5 @@ test-docker-all:
 
 # Tag a new release and push
 release version:
-    just checksum
-    git add install.sh
-    git commit -m "release {{version}}"
     git tag -s "v{{version}}" -m "v{{version}}"
     git push origin main --tags

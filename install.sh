@@ -8,15 +8,11 @@
 set -eu
 
 # ---------------------------------------------------------------------------
-# Integrity — auto-updated by `just checksum`, do not edit manually
-# ---------------------------------------------------------------------------
-SELF_CHECKSUM="a3fc06366dee12a30cf54287e0c814908b495c29fac97aa7d728415d5edef177"
-
-# ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 
 CHEZMOI_BIN_DIR="${CHEZMOI_BIN_DIR:-$HOME/.local/bin}"
+CHEZMOI_REPO="${CHEZMOI_REPO:-}"
 GITHUB_USER="${GITHUB_USER:-}"
 DRY_RUN=0
 MACOS_PKGS="git gnupg age openssh gopass"
@@ -45,20 +41,6 @@ age_decrypt() {
     else
         age -d "$@"
     fi
-}
-
-verify_integrity() {
-    script="$1"
-    if [ "$SELF_CHECKSUM" = "%%CHECKSUM%%" ]; then
-        warn "No embedded checksum — skipping integrity check."
-        return 0
-    fi
-    actual=$(sed 's/^SELF_CHECKSUM=.*/SELF_CHECKSUM="%%CHECKSUM%%"/' "$script" \
-        | sha256sum | cut -d' ' -f1)
-    if [ "$actual" != "$SELF_CHECKSUM" ]; then
-        die "Integrity check failed (expected $SELF_CHECKSUM, got $actual)"
-    fi
-    info "Integrity check passed."
 }
 
 run() {
@@ -268,14 +250,15 @@ install_chezmoi() {
 }
 
 init_chezmoi() {
-    if [ -z "$GITHUB_USER" ]; then
-        warn "No GITHUB_USER set — skipping chezmoi init."
-        warn "Run manually: chezmoi init --apply YOUR_GITHUB_USER"
+    repo="${CHEZMOI_REPO:-$GITHUB_USER}"
+    if [ -z "$repo" ]; then
+        warn "No CHEZMOI_REPO or GITHUB_USER set — skipping chezmoi init."
+        warn "Run manually: chezmoi init --apply <repo>"
         return 0
     fi
 
-    info "Initializing chezmoi for $GITHUB_USER..."
-    run chezmoi init --apply "$GITHUB_USER"
+    info "Initializing chezmoi for $repo..."
+    run chezmoi init --ssh --apply "$repo"
 }
 
 # ---------------------------------------------------------------------------
@@ -286,14 +269,15 @@ parse_args() {
     while [ $# -gt 0 ]; do
         case "$1" in
             --dry-run) DRY_RUN=1 ;;
-            --checksum)
-                sed 's/^SELF_CHECKSUM=.*/SELF_CHECKSUM="%%CHECKSUM%%"/' "$0" \
-                    | sha256sum | cut -d' ' -f1
-                exit 0
+            --repo)
+                shift
+                [ $# -gt 0 ] || die "--repo requires an argument"
+                CHEZMOI_REPO="$1"
                 ;;
+            --repo=*) CHEZMOI_REPO="${1#--repo=}" ;;
             --help|-h)
-                printf 'Usage: %s [--dry-run] [--checksum] [GITHUB_USERNAME]\n' "$0"
-                printf 'Environment: GITHUB_USER, CHEZMOI_BIN_DIR\n'
+                printf 'Usage: %s [--dry-run] [--repo REPO] [GITHUB_USERNAME]\n' "$0"
+                printf 'Environment: GITHUB_USER, CHEZMOI_REPO, CHEZMOI_BIN_DIR\n'
                 exit 0
                 ;;
             -*)
@@ -313,8 +297,6 @@ parse_args() {
 
 main() {
     parse_args "$@"
-
-    verify_integrity "$0"
 
     detect_os
 
