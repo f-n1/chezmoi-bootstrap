@@ -144,7 +144,7 @@ import_ssh_key() {
     fi
 
     info "Paste your SSH private key below, then press Enter and Ctrl-D:"
-    cat > "$BOOTSTRAP_KEY"
+    cat < /dev/tty > "$BOOTSTRAP_KEY"
     chmod 600 "$BOOTSTRAP_KEY"
     info "Saved bootstrap key to $BOOTSTRAP_KEY"
 }
