@@ -134,13 +134,31 @@ install_packages() {
 
 BOOTSTRAP_KEY="$HOME/.ssh/id_bootstrap"
 
+validate_ssh_key() {
+    keyfile="$1"
+    if ssh-keygen -l -f "$keyfile" >/dev/null 2>&1; then
+        return 0
+    fi
+    head -1 "$keyfile" | grep -q "BEGIN.*PRIVATE KEY"
+}
+
+ssh_key_info() {
+    keyfile="$1"
+    fingerprint=$(ssh-keygen -l -f "$keyfile" 2>/dev/null | cut -d' ' -f1-2)
+    if [ -n "$fingerprint" ]; then
+        echo "$fingerprint"
+    else
+        echo "[encrypted key]"
+    fi
+}
+
 import_ssh_key() {
     mkdir -p "$HOME/.ssh"
     chmod 700 "$HOME/.ssh"
 
     if [ -f "$BOOTSTRAP_KEY" ]; then
-        if ssh-keygen -l -f "$BOOTSTRAP_KEY" >/dev/null 2>&1; then
-            info "Valid bootstrap SSH key exists at $BOOTSTRAP_KEY ($(ssh-keygen -l -f "$BOOTSTRAP_KEY" 2>/dev/null | cut -d' ' -f1-2))"
+        if validate_ssh_key "$BOOTSTRAP_KEY"; then
+            info "Valid bootstrap SSH key exists at $BOOTSTRAP_KEY ($(ssh_key_info "$BOOTSTRAP_KEY"))"
             printf '    Replace it? [y/N] '
             read -r answer < /dev/tty
             case "$answer" in
@@ -157,13 +175,13 @@ import_ssh_key() {
     cat < /dev/tty > "$tmp_key"
 
     chmod 600 "$tmp_key"
-    if ! ssh-keygen -l -f "$tmp_key" >/dev/null 2>&1; then
+    if ! validate_ssh_key "$tmp_key"; then
         rm -f "$tmp_key"
         die "Input is not a valid SSH private key"
     fi
 
     mv "$tmp_key" "$BOOTSTRAP_KEY"
-    info "Saved bootstrap key to $BOOTSTRAP_KEY ($(ssh-keygen -l -f "$BOOTSTRAP_KEY" 2>/dev/null | cut -d' ' -f1-2))"
+    info "Saved bootstrap key to $BOOTSTRAP_KEY ($(ssh_key_info "$BOOTSTRAP_KEY"))"
 }
 
 # ---------------------------------------------------------------------------
