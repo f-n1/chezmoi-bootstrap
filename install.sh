@@ -13,15 +13,15 @@ set -eu
 CHEZMOI_REPO=""
 GITHUB_USER=""
 DRY_RUN=0
-MACOS_PKGS="git gnupg age openssh gopass chezmoi vim"
-LINUX_PKGS="git gnupg2 age openssh-clients curl gopass chezmoi vim"
-LINUX_PKGS_ALPINE="git gnupg age openssh-client curl gopass chezmoi vim"
-LINUX_PKGS_ARCH="git gnupg age openssh curl gopass chezmoi vim"
-LINUX_PKGS_CENTOS="git gnupg2 openssh-clients curl gopass chezmoi vim"
-LINUX_PKGS_FEDORA="git gnupg2 openssh-clients curl gopass chezmoi vim"
-LINUX_PKGS_MANJARO="git gnupg age openssh curl gopass chezmoi vim"
-LINUX_PKGS_RASPBIAN="git gnupg age openssh-client curl gopass chezmoi vim"
-LINUX_PKGS_UBUNTU="git gnupg age openssh-client curl gopass chezmoi vim"
+MACOS_PKGS="git gnupg age openssh gopass chezmoi vim fish mc htop iftop bmon"
+LINUX_PKGS="git gnupg2 age openssh-clients curl gopass chezmoi vim fish mc htop iftop bmon"
+LINUX_PKGS_ALPINE="git gnupg age openssh-client curl gopass chezmoi vim fish mc htop iftop bmon"
+LINUX_PKGS_ARCH="git gnupg age openssh curl gopass chezmoi vim fish mc htop iftop bmon"
+LINUX_PKGS_CENTOS="git gnupg2 openssh-clients curl gopass chezmoi vim fish mc htop iftop bmon"
+LINUX_PKGS_FEDORA="git gnupg2 openssh-clients curl gopass chezmoi vim fish mc htop iftop bmon"
+LINUX_PKGS_MANJARO="git gnupg age openssh curl gopass chezmoi vim fish mc htop iftop bmon"
+LINUX_PKGS_RASPBIAN="git gnupg age openssh-client curl gopass chezmoi vim fish mc htop iftop bmon"
+LINUX_PKGS_UBUNTU="git gnupg age openssh-client curl gopass chezmoi vim fish mc htop iftop bmon"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -75,7 +75,7 @@ install_macos() {
         run /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     fi
 
-    local pkgs="git gnupg age openssh gopass chezmoi vim"
+    local pkgs="git gnupg age openssh gopass chezmoi vim fish mc htop iftop bmon"
     info "Installing packages via Homebrew: $pkgs"
     for pkg in $pkgs; do
         if brew list --formula "$pkg" >/dev/null 2>&1; then
