@@ -10,7 +10,7 @@ set -eu
 # Configuration
 # ---------------------------------------------------------------------------
 
-VERSION="1.07"
+VERSION="1.08"
 CHEZMOI_REPO=""
 GITHUB_USER=""
 DRY_RUN=0
@@ -267,8 +267,8 @@ main() {
     printf '\n    Press Enter to continue or Ctrl-C to abort... '
     read -r _ < /dev/tty
 
-    install_packages
     import_ssh_key
+    install_packages
     check_chezmoi
     init_chezmoi
 
