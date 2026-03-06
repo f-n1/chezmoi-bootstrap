@@ -10,6 +10,7 @@ set -eu
 # Configuration
 # ---------------------------------------------------------------------------
 
+VERSION="1.07"
 CHEZMOI_REPO=""
 GITHUB_USER=""
 DRY_RUN=0
@@ -259,8 +260,12 @@ main() {
 
     detect_os
 
-    info "Chezmoi bootstrap — $OS_TYPE${DISTRO:+ ($DISTRO)}"
+    info "chezmoi-bootstrap v${VERSION} — install prerequisites and initialize dotfiles"
+    info "Target: $OS_TYPE${DISTRO:+ ($DISTRO)}"
     [ "$DRY_RUN" -eq 1 ] && info "Dry-run mode — no changes will be made"
+
+    printf '\n    Press Enter to continue or Ctrl-C to abort... '
+    read -r _ < /dev/tty
 
     install_packages
     import_ssh_key
