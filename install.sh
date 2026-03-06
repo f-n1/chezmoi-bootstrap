@@ -156,21 +156,30 @@ import_ssh_key() {
 
     if [ -f "$BOOTSTRAP_KEY" ]; then
         if validate_ssh_key "$BOOTSTRAP_KEY"; then
-            info "Valid bootstrap SSH key exists at $BOOTSTRAP_KEY ($(ssh_key_info "$BOOTSTRAP_KEY"))"
-            printf '    Replace it? [y/N] '
-            read -r answer < /dev/tty
-            case "$answer" in
-                y|Y|yes|YES) ;;
-                *) info "Keeping existing key."; return 0 ;;
-            esac
+            if [ -n "${SSH_BOOTSTRAP_KEY:-}" ]; then
+                info "Valid bootstrap SSH key exists at $BOOTSTRAP_KEY — replacing with SSH_BOOTSTRAP_KEY."
+            else
+                info "Valid bootstrap SSH key exists at $BOOTSTRAP_KEY ($(ssh_key_info "$BOOTSTRAP_KEY"))"
+                printf '    Replace it? [y/N] '
+                read -r answer < /dev/tty
+                case "$answer" in
+                    y|Y|yes|YES) ;;
+                    *) info "Keeping existing key."; return 0 ;;
+                esac
+            fi
         else
             warn "Existing $BOOTSTRAP_KEY is not a valid SSH key — replacing."
         fi
     fi
 
-    info "Paste your SSH private key below, then press Enter and Ctrl-D (Ctrl-C to abort):"
     tmp_key="$(mktemp)"
-    cat < /dev/tty > "$tmp_key"
+    if [ -n "${SSH_BOOTSTRAP_KEY:-}" ]; then
+        info "Using SSH key from SSH_BOOTSTRAP_KEY environment variable."
+        printf '%s\n' "$SSH_BOOTSTRAP_KEY" | base64 -d > "$tmp_key"
+    else
+        info "Paste your SSH private key below, then press Enter and Ctrl-D (Ctrl-C to abort):"
+        cat < /dev/tty > "$tmp_key"
+    fi
 
     chmod 600 "$tmp_key"
     if ! validate_ssh_key "$tmp_key"; then

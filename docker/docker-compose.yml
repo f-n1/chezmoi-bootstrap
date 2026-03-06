@@ -12,9 +12,11 @@
 x-common: &common
   stdin_open: true
   tty: true
-  working_dir: /bootstrap
+  working_dir: /root
   volumes:
-    - bootstrap_data:/bootstrap
+    - root_data:/root
+  environment:
+    - SSH_BOOTSTRAP_KEY=${SSH_BOOTSTRAP_KEY:-}
 
 x-apt-init: &apt-init
   entrypoint: ["/bin/sh", "-c", "apt-get update -qq && apt-get install -y -qq curl >/dev/null 2>&1; exec \"$$@\"", "--"]
@@ -98,4 +100,4 @@ services:
     command: sh install.sh --dry-run
 
 volumes:
-  bootstrap_data: 
+  root_data: 
