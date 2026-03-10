@@ -10,7 +10,7 @@ set -eu
 # Configuration
 # ---------------------------------------------------------------------------
 
-VERSION="1.10"
+VERSION="1.11"
 CHEZMOI_REPO=""
 GITHUB_USER=""
 DRY_RUN=0
