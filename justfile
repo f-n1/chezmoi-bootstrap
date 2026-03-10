@@ -5,13 +5,13 @@ TIMESTAMP := `date +%Y%m%d_%H%M%S`
 default:
     @just --list
 
-# Lint install.sh with shellcheck
+# Lint scripts with shellcheck
 lint:
-    shellcheck install.sh
+    shellcheck setup.sh install.sh
 
 # Test the bootstrap on the local machine (dry-run: installs deps only, no chezmoi init)
 test-local:
-    sh install.sh --dry-run
+    sh setup.sh --dry-run
 
 # Print the one-liner for copy-paste
 one-liner GITHUB_USER:
@@ -27,8 +27,8 @@ test-docker-all:
 
 # Tag a new release and push
 release version:
-    sed -i'' -e 's/^VERSION=".*"/VERSION="{{version}}"/' install.sh
-    git add install.sh
+    sed -i'' -e 's/^VERSION=".*"/VERSION="{{version}}"/' setup.sh
+    git add setup.sh
     git commit -m "release v{{version}}"
     git tag -s "v{{version}}" -m "v{{version}}"
     git push origin main --tags
