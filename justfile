@@ -17,6 +17,10 @@ test-local:
 one-liner GITHUB_USER:
     @echo 'curl -fsSL https://raw.githubusercontent.com/{{BOOTSTRAP_REPO}}/main/install.sh?t={{TIMESTAMP}} | sh -s -- {{GITHUB_USER}}'
 
+# Run install.sh on a remote SSH host (e.g. just install user@host)
+install target *ARGS:
+    ssh -A {{target}} 'curl -fsSL "https://raw.githubusercontent.com/{{BOOTSTRAP_REPO}}/main/install.sh?t={{TIMESTAMP}}" | sh -s -- {{ARGS}}'
+
 # Run a single distro container interactively (e.g. just test-docker ubuntu)
 test-docker distro:
     docker compose -f docker/docker-compose.yml run --rm {{distro}}
