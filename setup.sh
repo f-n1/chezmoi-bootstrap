@@ -101,7 +101,7 @@ install_linux() {
             info "Installing packages via dnf..."
             run $sudo_cmd dnf install -y $LINUX_PKGS_FEDORA
             ;;
-        centos|rhel|rocky|alma)
+        centos|rhel|rocky|alma|ultramarine)
             info "Installing packages via dnf..."
             run $sudo_cmd dnf install -y $LINUX_PKGS_CENTOS
             warn "age may not be in default repos — install manually if missing"
