@@ -1,5 +1,6 @@
 set dotenv-load
 BOOTSTRAP_REPO := env("BOOTSTRAP_REPO", "f-n1/chezmoi-bootstrap")
+TIMESTAMP := `date +%Y%m%d_%H%M%S`
 
 default:
     @just --list
@@ -14,7 +15,7 @@ test-local:
 
 # Print the one-liner for copy-paste
 one-liner GITHUB_USER:
-    @echo 'curl -fsSL https://raw.githubusercontent.com/{{BOOTSTRAP_REPO}}/main/install.sh | sh -s -- {{GITHUB_USER}}'
+    @echo 'curl -fsSL https://raw.githubusercontent.com/{{BOOTSTRAP_REPO}}/main/install.sh?t={{TIMESTAMP}} | sh -s -- {{GITHUB_USER}}'
 
 # Run a single distro container interactively (e.g. just test-docker ubuntu)
 test-docker distro:
@@ -26,5 +27,8 @@ test-docker-all:
 
 # Tag a new release and push
 release version:
+    sed -i'' -e 's/^VERSION=".*"/VERSION="{{version}}"/' install.sh
+    git add install.sh
+    git commit -m "release v{{version}}"
     git tag -s "v{{version}}" -m "v{{version}}"
     git push origin main --tags

@@ -213,12 +213,12 @@ init_chezmoi() {
         return 0
     fi
 
-    info "Initializing chezmoi for $repo..."
+    info "Initializing chezmoi for $repo (skipping encrypted files)..."
     if [ -f "$BOOTSTRAP_KEY" ]; then
         GIT_SSH_COMMAND="ssh -i $BOOTSTRAP_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
-            run chezmoi init --ssh --apply "$repo"
+            run chezmoi init --ssh --apply --exclude encrypted "$repo"
     else
-        run chezmoi init --ssh --apply "$repo"
+        run chezmoi init --ssh --apply --exclude encrypted "$repo"
     fi
 }
 
