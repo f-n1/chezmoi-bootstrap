@@ -131,7 +131,7 @@ install_packages() {
 # SSH key setup
 # ---------------------------------------------------------------------------
 
-BOOTSTRAP_KEY="$HOME/.ssh/id_chezmoi_bootstrap"
+BOOTSTRAP_KEY="$HOME/.bootstrap/.id_bootstrap"
 
 validate_ssh_key() {
     keyfile="$1"
