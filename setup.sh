@@ -257,9 +257,6 @@ main() {
     info "Target: $OS_TYPE${DISTRO:+ ($DISTRO)}"
     [ "$DRY_RUN" -eq 1 ] && info "Dry-run mode — no changes will be made"
 
-    printf '\n    Press Enter to continue or Ctrl-C to abort... '
-    read -r _ < /dev/tty
-
     setup_ssh_key
     install_packages
     check_chezmoi
