@@ -213,13 +213,22 @@ init_chezmoi() {
         return 0
     fi
 
-    info "Initializing chezmoi for $repo (skipping encrypted files)..."
+    git_ssh=""
     if [ -f "$BOOTSTRAP_KEY" ]; then
-        GIT_SSH_COMMAND="ssh -i $BOOTSTRAP_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
-            run chezmoi init --ssh --apply --exclude encrypted "$repo"
-    else
-        run chezmoi init --ssh --apply --exclude encrypted "$repo"
+        git_ssh="ssh -i $BOOTSTRAP_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
     fi
+
+    chezmoi_source="$(chezmoi source-path 2>/dev/null || true)"
+    if [ -n "$chezmoi_source" ] && [ -d "$chezmoi_source/.git" ]; then
+        info "Detected chezmoi source already exists — pulling latest..."
+        run env ${git_ssh:+GIT_SSH_COMMAND="$git_ssh"} git -C "$chezmoi_source" pull --ff-only
+    else
+        info "Initializing chezmoi for $repo..."
+        run env ${git_ssh:+GIT_SSH_COMMAND="$git_ssh"} chezmoi init --ssh "$repo"
+    fi
+
+    info "Applying dotfiles (skipping encrypted files)..."
+    run chezmoi apply --exclude encrypted
 }
 
 # ---------------------------------------------------------------------------
