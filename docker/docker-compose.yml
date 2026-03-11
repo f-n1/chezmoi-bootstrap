@@ -43,7 +43,7 @@ services:
 
   fedora:
     <<: [*common, *dnf-init]
-    image: fedora:41
+    image: cubby:fedora
     command: sh
 
   rocky:

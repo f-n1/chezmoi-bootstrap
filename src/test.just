@@ -11,3 +11,6 @@ docker distro:
 # Run install.sh --dry-run across ALL supported distros in parallel
 docker-all:
     docker compose -f {{WORKING_DIR}}/docker/docker-compose.yml --profile test up --abort-on-container-exit
+
+build distro:
+    docker build -t cubby:{{distro}} -f {{WORKING_DIR}}/img/{{distro}}/Dockerfile {{WORKING_DIR}}/img/{{distro}}
