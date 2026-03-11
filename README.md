@@ -1,4 +1,4 @@
-# chezmoi-bootstrap
+# cubby
 
 Secure one-liner to install prerequisites and initialize [chezmoi](https://www.chezmoi.io/) on a fresh machine.
 
@@ -20,7 +20,7 @@ Download to a temp file so the embedded checksum can be verified, then run (repl
 
 ```bash
 d=$(mktemp -d) && \
-  curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USER/chezmoi-bootstrap/main/install.sh -o "$d/install.sh" && \
+  curl -fsSL https://raw.githubusercontent.com/YOUR_GITHUB_USER/cubby/main/install.sh -o "$d/install.sh" && \
   sh "$d/install.sh" YOUR_GITHUB_USER && \
   rm -rf "$d"
 ```

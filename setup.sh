@@ -3,7 +3,7 @@
 # Supports macOS (Homebrew) and Linux (apt, dnf, pacman, apk).
 #
 # Usage:
-#   sh setup.sh [--dry-run] [--repo REPO] [GITHUB_USERNAME]
+#   sh setup.sh [--dry-run] [GITHUB_USERNAME]
 set -eu
 
 # ---------------------------------------------------------------------------
@@ -11,9 +11,10 @@ set -eu
 # ---------------------------------------------------------------------------
 
 VERSION="1.13"
-CHEZMOI_REPO=""
 GITHUB_USER=""
 DRY_RUN=0
+CUBBY_HOME="$HOME/.cubby"
+BOOTSTRAP_KEY="$CUBBY_HOME/id_bootstrap"
 MACOS_PKGS="git gnupg age openssh gopass chezmoi vim fish mc htop iftop bmon"
 LINUX_PKGS="git gnupg2 age openssh-clients curl gopass chezmoi vim fish mc htop iftop bmon"
 LINUX_PKGS_ALPINE="git gnupg age openssh-client curl gopass chezmoi vim fish mc htop iftop bmon"
@@ -131,7 +132,6 @@ install_packages() {
 # SSH key setup
 # ---------------------------------------------------------------------------
 
-BOOTSTRAP_KEY="$HOME/.bootstrap/.id_bootstrap"
 
 validate_ssh_key() {
     keyfile="$1"
@@ -190,12 +190,13 @@ check_chezmoi() {
 }
 
 init_chezmoi() {
-    repo="${CHEZMOI_REPO:-${GITHUB_USER}}"
-    if [ -z "$repo" ]; then
-        warn "No CHEZMOI_REPO or GITHUB_USER set — skipping chezmoi init."
-        warn "Run manually: chezmoi init --apply <repo>"
+    if [ -z "$GITHUB_USER" ]; then
+        warn "No GITHUB_USER set — skipping chezmoi init."
+        warn "Run manually: chezmoi init --apply --ssh <user>"
         return 0
     fi
+
+    repo="git@github.com:${GITHUB_USER}/dotfiles.git"
 
     git_ssh=""
     if [ -f "$BOOTSTRAP_KEY" ]; then
@@ -208,7 +209,7 @@ init_chezmoi() {
         run env ${git_ssh:+GIT_SSH_COMMAND="$git_ssh"} git -C "$chezmoi_source" pull --ff-only
     else
         info "Initializing chezmoi for $repo..."
-        run env ${git_ssh:+GIT_SSH_COMMAND="$git_ssh"} chezmoi init --ssh "$repo"
+        run env ${git_ssh:+GIT_SSH_COMMAND="$git_ssh"} chezmoi init "$repo"
     fi
 
     info "Applying dotfiles (skipping encrypted files)..."
@@ -223,14 +224,8 @@ parse_args() {
     while [ $# -gt 0 ]; do
         case "$1" in
             --dry-run) DRY_RUN=1 ;;
-            --repo)
-                shift
-                [ $# -gt 0 ] || die "--repo requires an argument"
-                CHEZMOI_REPO="$1"
-                ;;
-            --repo=*) CHEZMOI_REPO="${1#--repo=}" ;;
             --help|-h)
-                printf 'Usage: %s [--dry-run] [--repo REPO] [GITHUB_USERNAME]\n' "$0"
+                printf 'Usage: %s [--dry-run] [GITHUB_USERNAME]\n' "$0"
                 exit 0
                 ;;
             -*)
@@ -253,7 +248,7 @@ main() {
 
     detect_os
 
-    info "chezmoi-bootstrap v${VERSION} — install prerequisites and initialize dotfiles"
+    info "cubby v${VERSION} — install prerequisites and initialize dotfiles"
     info "Target: $OS_TYPE${DISTRO:+ ($DISTRO)}"
     [ "$DRY_RUN" -eq 1 ] && info "Dry-run mode — no changes will be made"
 
