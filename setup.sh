@@ -3,7 +3,14 @@
 # Supports macOS (Homebrew) and Linux (apt, dnf, pacman, apk).
 #
 # Usage:
-#   sh setup.sh [--dry-run] [GITHUB_USERNAME]
+#   sh setup.sh [--dry-run] [COMMAND] [GITHUB_USERNAME]
+#
+# Commands:
+#   all             Run full bootstrap (default)
+#   packages        Install prerequisite packages
+#   ssh-key         Setup SSH key from SSH_BOOTSTRAP_KEY
+#   pull-keychains  Clone/pull keychains repo
+#   chezmoi         Initialize and apply chezmoi dotfiles
 set -eu
 
 # ---------------------------------------------------------------------------
@@ -12,6 +19,7 @@ set -eu
 
 VERSION="1.15"
 GITHUB_USER=""
+COMMAND="all"
 DRY_RUN=0
 CUBBY_HOME="$HOME/.cubby"
 BOOTSTRAP_KEY="$CUBBY_HOME/id_bootstrap"
@@ -177,6 +185,34 @@ setup_ssh_key() {
 }
 
 # ---------------------------------------------------------------------------
+# Keychains
+# ---------------------------------------------------------------------------
+
+pull_keychains() {
+    if [ -z "$GITHUB_USER" ]; then
+        warn "No GITHUB_USER set — skipping keychains pull."
+        return 0
+    fi
+
+    keychains_dir="$CUBBY_HOME/keychains"
+    keychains_repo="git@github.com:${GITHUB_USER}/keychains.git"
+
+    git_ssh=""
+    if [ -f "$BOOTSTRAP_KEY" ]; then
+        git_ssh="ssh -i $BOOTSTRAP_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+    fi
+
+    if [ -d "$keychains_dir/.git" ]; then
+        info "Updating keychains at $keychains_dir..."
+        run env ${git_ssh:+GIT_SSH_COMMAND="$git_ssh"} git -C "$keychains_dir" pull --ff-only
+    else
+        info "Cloning keychains from $keychains_repo..."
+        mkdir -p "$keychains_dir"
+        run env ${git_ssh:+GIT_SSH_COMMAND="$git_ssh"} git clone "$keychains_repo" "$keychains_dir"
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # chezmoi
 # ---------------------------------------------------------------------------
 
@@ -225,8 +261,12 @@ parse_args() {
         case "$1" in
             --dry-run) DRY_RUN=1 ;;
             --help|-h)
-                printf 'Usage: %s [--dry-run] [GITHUB_USERNAME]\n' "$0"
+                printf 'Usage: %s [--dry-run] [COMMAND] [GITHUB_USERNAME]\n' "$0"
+                printf 'Commands: all (default), packages, ssh-key, chezmoi\n'
                 exit 0
+                ;;
+            all|packages|ssh-key|pull-keychains|chezmoi)
+                COMMAND="$1"
                 ;;
             -*)
                 die "Unknown option: $1"
@@ -252,16 +292,33 @@ main() {
     info "Target: $OS_TYPE${DISTRO:+ ($DISTRO)}"
     [ "$DRY_RUN" -eq 1 ] && info "Dry-run mode — no changes will be made"
 
-    setup_ssh_key
-    install_packages
-    check_chezmoi
-    init_chezmoi
-
-    info "Bootstrap complete."
-    if has chezmoi; then
-        info "chezmoi version: $(chezmoi --version)"
-        info "chezmoi doctor:  chezmoi doctor"
-    fi
+    case "$COMMAND" in
+        packages)
+            install_packages
+            ;;
+        ssh-key)
+            setup_ssh_key
+            ;;
+        pull-keychains)
+            pull_keychains
+            ;;
+        chezmoi)
+            check_chezmoi
+            init_chezmoi
+            ;;
+        all)
+            setup_ssh_key
+            install_packages
+            pull_keychains
+            check_chezmoi
+            init_chezmoi
+            info "Bootstrap complete."
+            if has chezmoi; then
+                info "chezmoi version: $(chezmoi --version)"
+                info "chezmoi doctor:  chezmoi doctor"
+            fi
+            ;;
+    esac
 }
 
 main "$@"
