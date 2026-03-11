@@ -17,7 +17,7 @@ set -eu
 # Configuration
 # ---------------------------------------------------------------------------
 
-VERSION="1.17"
+VERSION="1.18"
 GITHUB_USER=""
 COMMAND="all"
 DRY_RUN=0
