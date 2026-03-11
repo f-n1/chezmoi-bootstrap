@@ -1,10 +1,10 @@
-# Test matrix for setup.sh across supported Linux distros.
+# Test matrix for bootstrap.sh across supported Linux distros.
 #
 # Interactive (drop into shell):
 #   docker compose run --rm ubuntu
 #
 # Automated dry-run for one distro:
-#   docker compose run --rm ubuntu sh setup.sh --dry-run
+#   docker compose run --rm ubuntu sh bin/bootstrap.sh --dry-run
 #
 # Automated dry-run for ALL distros:
 #   docker compose --profile test up
@@ -67,37 +67,37 @@ services:
     <<: [*common, *apt-init]
     image: ubuntu:24.04
     profiles: [test]
-    command: sh setup.sh --dry-run
+    command: sh bin/bootstrap.sh --dry-run
 
   test-debian:
     <<: [*common, *apt-init]
     image: debian:bookworm
     profiles: [test]
-    command: sh setup.sh --dry-run
+    command: sh bin/bootstrap.sh --dry-run
 
   test-fedora:
     <<: [*common, *dnf-init]
     image: fedora:41
     profiles: [test]
-    command: sh setup.sh --dry-run
+    command: sh bin/bootstrap.sh --dry-run
 
   test-rocky:
     <<: [*common, *dnf-init]
     image: rockylinux:9
     profiles: [test]
-    command: sh setup.sh --dry-run
+    command: sh bin/bootstrap.sh --dry-run
 
   test-archlinux:
     <<: [*common, *pacman-init]
     image: archlinux:latest
     profiles: [test]
-    command: sh setup.sh --dry-run
+    command: sh bin/bootstrap.sh --dry-run
 
   test-alpine:
     <<: [*common, *apk-init]
     image: alpine:3.21
     profiles: [test]
-    command: sh setup.sh --dry-run
+    command: sh bin/bootstrap.sh --dry-run
 
 volumes:
   root_data: 

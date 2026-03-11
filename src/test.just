@@ -2,7 +2,7 @@ WORKING_DIR := justfile_directory()
 
 # Lint scripts with shellcheck
 lint:
-    shellcheck {{WORKING_DIR}}/setup.sh {{WORKING_DIR}}/install.sh
+    shellcheck {{WORKING_DIR}}/bin/bootstrap.sh {{WORKING_DIR}}/install.sh
 
 # Run a single distro container interactively (e.g. just test docker ubuntu)
 docker distro:

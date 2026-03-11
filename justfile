@@ -23,8 +23,8 @@ commit:
 
 # Tag a new release and push
 release version:
-    sed -i '' 's/^VERSION=".*"/VERSION="{{version}}"/' setup.sh
-    git add setup.sh
+    sed -i '' 's/^VERSION=".*"/VERSION="{{version}}"/' bin/bootstrap.sh
+    git add bin/bootstrap.sh
     git commit -m "release v{{version}}"
     git tag -s "v{{version}}" -m "v{{version}}"
     git push origin main --tags

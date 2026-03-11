@@ -3,7 +3,7 @@
 # Supports macOS (Homebrew) and Linux (apt, dnf, pacman, apk).
 #
 # Usage:
-#   sh setup.sh [--dry-run] [COMMAND] [GITHUB_USERNAME]
+#   sh bin/bootstrap.sh [--dry-run] [COMMAND] [GITHUB_USERNAME]
 #
 # Commands:
 #   all             Run full bootstrap (default)
@@ -25,9 +25,9 @@ CUBBY_HOME="$HOME/.cubby"
 BOOTSTRAP_KEY="$CUBBY_HOME/id_bootstrap"
 MACOS_PKGS="git gnupg age openssh gopass chezmoi vim fish mc htop iftop bmon"
 LINUX_PKGS_ALPINE="git gnupg age openssh-client curl gopass chezmoi vim fish mc htop iftop bmon"
-LINUX_PKGS_ARCH="git gnupg age openssh curl gopass chezmoi vim fish mc htop iftop bmon"
-LINUX_PKGS_RPM="git gnupg2 openssh-clients curl gopass chezmoi vim fish mc htop iftop bmon age"
-LINUX_PKGS_DEBIAN="git gnupg age openssh-client curl gopass chezmoi vim fish mc htop iftop bmon"
+LINUX_PKGS_ARCH="git gnupg age openssh inetutils curl gopass chezmoi vim fish mc htop iftop bmon"
+LINUX_PKGS_RPM="git gnupg2 openssh-clients hostname curl gopass chezmoi vim fish mc htop iftop bmon age"
+LINUX_PKGS_DEBIAN="git gnupg age openssh-client hostname curl gopass chezmoi vim fish mc htop iftop bmon"
 
 # ---------------------------------------------------------------------------
 # Helpers
