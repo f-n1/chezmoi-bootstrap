@@ -10,7 +10,7 @@ set -eu
 # Configuration
 # ---------------------------------------------------------------------------
 
-VERSION="1.14"
+VERSION="1.15"
 GITHUB_USER=""
 DRY_RUN=0
 CUBBY_HOME="$HOME/.cubby"
