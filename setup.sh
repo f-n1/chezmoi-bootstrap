@@ -17,21 +17,17 @@ set -eu
 # Configuration
 # ---------------------------------------------------------------------------
 
-VERSION="1.18"
+VERSION="1.19"
 GITHUB_USER=""
 COMMAND="all"
 DRY_RUN=0
 CUBBY_HOME="$HOME/.cubby"
 BOOTSTRAP_KEY="$CUBBY_HOME/id_bootstrap"
 MACOS_PKGS="git gnupg age openssh gopass chezmoi vim fish mc htop iftop bmon"
-LINUX_PKGS="git gnupg2 age openssh-clients curl gopass chezmoi vim fish mc htop iftop bmon"
 LINUX_PKGS_ALPINE="git gnupg age openssh-client curl gopass chezmoi vim fish mc htop iftop bmon"
 LINUX_PKGS_ARCH="git gnupg age openssh curl gopass chezmoi vim fish mc htop iftop bmon"
-LINUX_PKGS_CENTOS="git gnupg2 openssh-clients curl gopass chezmoi vim fish mc htop iftop bmon"
-LINUX_PKGS_FEDORA="git gnupg2 openssh-clients curl gopass chezmoi vim fish mc htop iftop bmon"
-LINUX_PKGS_MANJARO="git gnupg age openssh curl gopass chezmoi vim fish mc htop iftop bmon"
-LINUX_PKGS_RASPBIAN="git gnupg age openssh-client curl gopass chezmoi vim fish mc htop iftop bmon"
-LINUX_PKGS_UBUNTU="git gnupg age openssh-client curl gopass chezmoi vim fish mc htop iftop bmon"
+LINUX_PKGS_RPM="git gnupg2 openssh-clients curl gopass chezmoi vim fish mc htop iftop bmon age"
+LINUX_PKGS_DEBIAN="git gnupg age openssh-client curl gopass chezmoi vim fish mc htop iftop bmon"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -104,16 +100,11 @@ install_linux() {
         ubuntu|debian|pop|linuxmint|raspbian)
             info "Installing packages via apt..."
             run $sudo_cmd apt-get update -qq
-            run $sudo_cmd apt-get install -y -qq $LINUX_PKGS_UBUNTU
+            run $sudo_cmd apt-get install -y -qq $LINUX_PKGS_DEBIAN
             ;;
-        fedora)
+        centos|rhel|rocky|alma|ultramarine|fedora)
             info "Installing packages via dnf..."
-            run $sudo_cmd dnf install -y $LINUX_PKGS_FEDORA
-            ;;
-        centos|rhel|rocky|alma|ultramarine)
-            info "Installing packages via dnf..."
-            run $sudo_cmd dnf install -y $LINUX_PKGS_CENTOS
-            warn "age may not be in default repos — install manually if missing"
+            run $sudo_cmd dnf install -y $LINUX_PKGS_RPM
             ;;
         arch|manjaro|endeavouros)
             info "Installing packages via pacman..."
@@ -296,13 +287,12 @@ main() {
         packages)
             install_packages
             ;;
-        ssh-key)
-            setup_ssh_key
-            ;;
         pull-keychains)
+            setup_ssh_key
             pull_keychains
             ;;
         chezmoi)
+            setup_ssh_key
             check_chezmoi
             init_chezmoi
             ;;
